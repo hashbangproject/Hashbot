@@ -156,7 +156,7 @@
 		</cconfiguration>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-		<project id="stellarino.com.ti.ccstudio.buildDefinitions.TMS470.ProjectType.817232299" name="ARM" projectType="com.ti.ccstudio.buildDefinitions.TMS470.ProjectType"/>
+		<project id="hashbot.com.ti.ccstudio.buildDefinitions.TMS470.ProjectType.817232299" name="ARM" projectType="com.ti.ccstudio.buildDefinitions.TMS470.ProjectType"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.language.mapping">
 		<project-mappings>
@@ -168,7 +168,7 @@
 		</project-mappings>
 	</storageModule>
 	<storageModule moduleId="refreshScope" versionNumber="1">
-		<resource resourceType="PROJECT" workspacePath="/stellarino"/>
+		<resource resourceType="PROJECT" workspacePath="/hashbot"/>
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration"/>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
