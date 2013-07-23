@@ -21,6 +21,8 @@
 
 static const long pwmPeriod = 80000000 / PWMFREQ;
 
+
+
 void init(void) {
     // Set system clock to 80 MHz
     ROM_SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);

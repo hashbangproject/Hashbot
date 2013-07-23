@@ -72,4 +72,14 @@ void analogWrite(unsigned char pin, short val);
 void servoWrite(unsigned char pin, short val);
 unsigned long pulseIn(unsigned char pin, short val, unsigned long timeout);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void delayInterrupt();
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

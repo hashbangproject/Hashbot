@@ -24,7 +24,16 @@
 
 // Use WTIMER5 TIMER_A
 void delay(unsigned long nTime);
-void delayInterrupt(void);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void delayInterrupt();
+
+#ifdef __cplusplus
+}
+#endif
+
 
 void delayMicroseconds(unsigned long nTime);
 

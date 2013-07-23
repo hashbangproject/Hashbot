@@ -24,7 +24,9 @@ static void GenericISR(void);
 extern unsigned long __STACK_TOP;
 
 // Initial vector table
-#pragma DATA_SECTION(g_pfnVectors, ".intvecs")
+
+#pragma DATA_SECTION(".intvecs");
+
 void (* const g_pfnVectors[])(void) =
 {
     (void (*)(void))((unsigned long)&__STACK_TOP),	// Initial stack pointer
