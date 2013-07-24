@@ -25,7 +25,7 @@ extern unsigned long __STACK_TOP;
 
 // Initial vector table
 
-#pragma DATA_SECTION(".intvecs");
+#pragma DATA_SECTION(g_pfnVectors, ".intvecs");
 
 void (* const g_pfnVectors[])(void) =
 {
@@ -44,3 +44,5 @@ void ResetISR(void) {
 static void GenericISR(void) {
     while(1);
 }
+
+
