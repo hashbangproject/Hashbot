@@ -20,31 +20,30 @@
 #ifndef STELLARINO_H
 #define STELLARINO_H
 
-#include "stdlib.h"
-#include "stdint.h"
-#include "math.h"
+#include <stdlib.h>
+#include <stdint.h>
 
 #define PART_LM4F120H5QR
 #define TARGET_IS_BLIZZARD_RA1
-#include "inc/lm4f120h5qr.h"
-#include "inc/hw_types.h"
-#include "inc/hw_memmap.h"
-#include "driverlib/rom.h"
-#include "driverlib/interrupt.h"
-#include "driverlib/debug.h"
-#include "driverlib/fpu.h"
-#include "driverlib/pin_map.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/gpio.h"
-#include "driverlib/timer.h"
-#include "driverlib/adc.h"
-#include "driverlib/uart.h"
-#include "driverlib/ssi.h"
+#include <inc/lm4f120h5qr.h>
+#include <inc/hw_types.h>
+#include <inc/hw_memmap.h>
+#include <driverlib/rom.h>
+#include <driverlib/interrupt.h>
+#include <driverlib/debug.h>
+#include <driverlib/fpu.h>
+#include <driverlib/pin_map.h>
+#include <driverlib/sysctl.h>
+#include <driverlib/gpio.h>
+#include <driverlib/timer.h>
+#include <driverlib/adc.h>
+#include <driverlib/uart.h>
+#include <driverlib/ssi.h>
 
-#include "stellarino_pins.h"
-#include "stellarino_timer.h"
-#include "stellarino_uart.h"
-#include "stellarino_spi.h"
+#include <stellarino_pins.h>
+#include <stellarino_timer.h>
+#include <stellarino_uart.h>
+#include <stellarino_spi.h>
 
 #define INPUT 0
 #define OUTPUT 1

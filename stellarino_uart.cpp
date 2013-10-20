@@ -19,13 +19,17 @@
 
 #include "stellarino_uart.h"
 
-char peekedChar[8], peeked[8] = {0};
+static char peekedChar[8], peeked[8] = {0};
 
 static unsigned long power(unsigned long base, int exp) {
     int res = 1;
     int i;
     for (i = 0; i < exp; i++) res *= base;
     return res;
+}
+
+static inline float fmod_(float x, float y) {
+    return x - y*((long)(x/y));
 }
 
 void enableUART(uint8_t UART, unsigned long baudRate) {
@@ -364,7 +368,7 @@ void UARTputf(uint8_t UART, float f, uint8_t decimal) {
         f *= power(10, decimal);
 
         for (a = 0; a < decimal; a++) {
-            b = (uint8_t)fmod(f, 10);
+            b = (uint8_t)fmod_(f, 10);
             digs[a] = b + 48;   // Convert to digit ASCII
             f /= 10;
         }
@@ -374,11 +378,11 @@ void UARTputf(uint8_t UART, float f, uint8_t decimal) {
     }
 
     do {
-        b = (uint8_t)fmod(f, 10);
+        b = (uint8_t)fmod_(f, 10);
         digs[a] = b + 48;   // Convert to digit ASCII
         f /= 10;
         a++;
-    } while ((int)f);
+    } while ((int)f && a < 12);
 
     // Reverse the digits into most significant to least significant
     if (neg) {

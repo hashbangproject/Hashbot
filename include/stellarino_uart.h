@@ -20,6 +20,9 @@
 #ifndef STELLARINO_UART_H
 #define STELLARINO_UART_H
 
+#define MAX_FLOAT 1E99
+#define MIN_FLOAT -1E99
+
 #include "stellarino.h"
 
 void enableUART(uint8_t UART, unsigned long baudRate);
