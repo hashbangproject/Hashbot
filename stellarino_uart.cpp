@@ -382,7 +382,7 @@ void UARTputf(uint8_t UART, float f, uint8_t decimal) {
         digs[a] = b + 48;   // Convert to digit ASCII
         f /= 10;
         a++;
-    } while ((int)f && a < 12);
+    } while ((int)f && a < 11);
 
     // Reverse the digits into most significant to least significant
     if (neg) {
