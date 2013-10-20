@@ -1,3 +1,6 @@
+// Copyright (C) 2013 Project Hashbang
+// Created by Andrew Yang
+
 #include <gait.h>
 #include <stdint.h>
 #include <math.h> //should be unnecessary if using the dsp library

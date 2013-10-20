@@ -1,0 +1,153 @@
+// Copyright (C) 2013 Project Hashbang
+// Created by Sultan Qasim Khan
+
+#include <stdint.h>
+#include <stellarino.h>
+#include <crc.h>
+#include <messaging.h>
+
+#define UART_PORT 2
+#define MESSAGE_TIMEOUT 250 // ms
+
+#define NIBBLE2ASCII(x) ((x) < 0x0A ? '0' + (x) : 'A' + (x) - 0x0A)
+#define ASCII2NIBBLE(x) ((x) >= 'A' ? (x) - 'A' + 0x0A : (x) - '0')
+
+// Kept off the stack because it is too big
+static uint8_t hexMsgBuffer[512];
+
+typedef struct MsgHeaderStruct
+{
+    uint8_t msgType;
+    uint8_t msgLength;
+    uint16_t crc;
+} MsgHeader;
+
+
+// The output buffer must be at least double the length of the input buffer
+static inline uint8_t *toHex(uint8_t input)
+{
+    static uint8_t buff[3] = {0};
+
+    buff[0] = NIBBLE2ASCII(input >> 4);
+    buff[1] = NIBBLE2ASCII(input & 0x0F);
+
+    return buff;
+}
+
+
+// The output buffer must be at least half the size of the input buffer
+static inline uint8_t fromHex(const uint8_t input[2])
+{
+    uint8_t i;
+
+    i = ASCII2NIBBLE(input[0]) << 4;
+    i |= ASCII2NIBBLE(input[1]);
+
+    return i;
+}
+
+
+static void writeHex(const uint8_t *buff, int buffSize)
+{
+    int i;
+    uint8_t *hexByte;
+
+    for (i = 0; i < buffSize; i++)
+    {
+        hexByte = toHex(buff[i]);
+        UARTputc(UART_PORT, hexByte[0]);
+        UARTputc(UART_PORT, hexByte[1]);
+    }
+}
+
+
+// Waits timeout milliseconds for a char
+// Returns the char if it succeeds, else returns -255
+static int getCharWait(int timeout)
+{
+    unsigned long sTime = millis();
+    int c;
+
+    do
+    {
+        c = UARTpeek(UART_PORT);
+    } while (c == -255 && millis() - sTime < timeout);
+
+    if (c > -255) c = getc();   // Take the character off the buffer
+
+    return c;
+}
+
+
+void putMessage(uint8_t msgType, uint8_t msgLength, const uint8_t *msg)
+{
+    MsgHeader header;
+    header.msgType = msgType;
+    header.msgLength = msgLength;
+    header.crc = calcCrc16(msg, msgLength);
+
+    // Start the message
+    UARTputc(UART_PORT, '#');
+
+    // Send the message header
+    writeHex((uint8_t *)&header, sizeof(header));
+
+    // Send the message
+    writeHex(msg, msgLength);
+
+    // End the message
+    UARTputc(UART_PORT, '!');
+}
+
+
+// Returns 0 for success, 1 for timeout, 2 for CRC failure
+int getMessage(uint8_t *msgType, uint8_t *msgLength, uint8_t *msg)
+{
+    int c, i;
+
+    // Take in data until the start of a message
+    do
+    {
+        c = getCharWait(MESSAGE_TIMEOUT);
+    } while (c > -255 && c != '#');
+
+    if (c == -255) return 1;
+
+    uint8_t hexHeader[8];
+    MsgHeader header;
+
+    // Read in the hex-encoded header
+    for (i = 0; i < 8; i++)
+    {
+        c = getCharWait(MESSAGE_TIMEOUT);
+        if (c == -255) return 1;
+
+        hexHeader[i] = (uint8_t)c;
+    }
+
+    // Unhexify and unpack the header
+    for (i = 0; i < 4; i++)
+        *((uint8_t *)&header + i) = fromHex(hexHeader + 2*i);
+
+    *msgType = header.msgType;
+    *msgLength = header.msgLength;
+
+    // Read in the message
+    for (i = 0; i < header.msgLength * 2; i++)
+    {
+        c = getCharWait(MESSAGE_TIMEOUT);
+        if (c == -255) return 1;
+
+        hexMsgBuffer[i] = (uint8_t)c;
+    }
+
+    // Unhexify the message body
+    for (i = 0; i < header.msgLength; i++)
+        msg[i] = fromHex(hexMsgBuffer + 2*i);
+
+    // Perform a CRC16 check on the message
+    uint16_t crc = calcCrc16(msg, header.msgLength);
+    if (crc != header.crc) return 2;
+
+    return 0;
+}

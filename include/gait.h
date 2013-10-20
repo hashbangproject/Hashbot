@@ -1,6 +1,8 @@
+// Copyright (C) 2013 Project Hashbang
+// Created by Andrew Yang
+
 #ifndef GAIT_H
 #define GAIT_H
-
 
 struct vector
 {

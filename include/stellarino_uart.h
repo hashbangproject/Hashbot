@@ -42,8 +42,9 @@ void UARTputln(uint8_t UART);
 char getc(void);
 char UARTgetc(uint8_t UART);
 
-char peek(void);
-char UARTpeek(uint8_t UART);
+// These return -255 if buffers are empty
+int peek(void);
+int UARTpeek(uint8_t UART);
 
 char peekBlocking(void);
 char UARTpeekBlocking(uint8_t UART);
