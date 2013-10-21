@@ -7,13 +7,10 @@
 #include <messaging.h>
 
 #define UART_PORT 2
-#define MESSAGE_TIMEOUT 250 // ms
+#define MESSAGE_TIMEOUT 500 // ms
 
 #define NIBBLE2ASCII(x) ((x) < 0x0A ? '0' + (x) : 'A' + (x) - 0x0A)
 #define ASCII2NIBBLE(x) ((x) >= 'A' ? (x) - 'A' + 0x0A : (x) - '0')
-
-// Kept off the stack because it is too big
-static uint8_t hexMsgBuffer[512];
 
 typedef struct MsgHeaderStruct
 {
@@ -78,6 +75,29 @@ static int getCharWait(int timeout)
     return c;
 }
 
+// Returns number of (binary) bytes read
+// i.e. Returns two if it reads four bytes of hex data
+static int readHex(uint8_t *buff, int buffSize)
+{
+    uint8_t hexByte[2];
+    int i, c;
+
+    for (i = 0; i < buffSize; i++)
+    {
+        c = getCharWait(MESSAGE_TIMEOUT);
+        if (c == -255) break;
+        hexByte[0] = c;
+
+        c = getCharWait(MESSAGE_TIMEOUT);
+        if (c == -255) break;
+        hexByte[1] = c;
+
+        buff[i] = fromHex(hexByte);
+    }
+
+    return i;
+}
+
 
 void putMessage(uint8_t msgType, uint8_t msgLength, const uint8_t *msg)
 {
@@ -103,7 +123,7 @@ void putMessage(uint8_t msgType, uint8_t msgLength, const uint8_t *msg)
 // Returns 0 for success, 1 for timeout, 2 for CRC failure
 int getMessage(uint8_t *msgType, uint8_t *msgLength, uint8_t *msg)
 {
-    int c, i;
+    int c, n;
 
     // Take in data until the start of a message
     do
@@ -117,33 +137,15 @@ int getMessage(uint8_t *msgType, uint8_t *msgLength, uint8_t *msg)
     MsgHeader header;
 
     // Read in the hex-encoded header
-    for (i = 0; i < 8; i++)
-    {
-        c = getCharWait(MESSAGE_TIMEOUT);
-        if (c == -255) return 1;
-
-        hexHeader[i] = (uint8_t)c;
-    }
-
-    // Unhexify and unpack the header
-    for (i = 0; i < 4; i++)
-        *((uint8_t *)&header + i) = fromHex(hexHeader + 2*i);
+    n = readHex((uint8_t *)&header, sizeof(header));
+    if (n < sizeof(header)) return 1;
 
     *msgType = header.msgType;
     *msgLength = header.msgLength;
 
     // Read in the message
-    for (i = 0; i < header.msgLength * 2; i++)
-    {
-        c = getCharWait(MESSAGE_TIMEOUT);
-        if (c == -255) return 1;
-
-        hexMsgBuffer[i] = (uint8_t)c;
-    }
-
-    // Unhexify the message body
-    for (i = 0; i < header.msgLength; i++)
-        msg[i] = fromHex(hexMsgBuffer + 2*i);
+    n = readHex(msg, header.msgLength);
+    if (n < header.msgLength) return 1;
 
     // Perform a CRC16 check on the message
     uint16_t crc = calcCrc16(msg, header.msgLength);
