@@ -99,12 +99,19 @@ static int readHex(uint8_t *buff, int buffSize)
 }
 
 
-void putMessage(uint8_t msgType, uint8_t msgLength, const uint8_t *msg)
+void enableMessaging()
+{
+    enableUART(UART_PORT, 115200);
+}
+
+
+void putMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg)
 {
     MsgHeader header;
-    header.msgType = msgType;
+    header.msgType = (uint8_t)msgType;
     header.msgLength = msgLength;
-    header.crc = calcCrc16(msg, msgLength);
+    header.crc = calcCrc16((uint8_t *)&header, 2);
+    header.crc = calcCrc16(msg, msgLength, header.crc);
 
     // Start the message
     UARTputc(UART_PORT, '#');
@@ -121,7 +128,7 @@ void putMessage(uint8_t msgType, uint8_t msgLength, const uint8_t *msg)
 
 
 // Returns 0 for success, 1 for timeout, 2 for CRC failure
-int getMessage(uint8_t *msgType, uint8_t *msgLength, uint8_t *msg)
+int getMessage(MessageType *msgType, uint8_t *msgLength, uint8_t *msg)
 {
     int c, n;
 
@@ -133,14 +140,13 @@ int getMessage(uint8_t *msgType, uint8_t *msgLength, uint8_t *msg)
 
     if (c == -255) return 1;
 
-    uint8_t hexHeader[8];
     MsgHeader header;
 
     // Read in the hex-encoded header
     n = readHex((uint8_t *)&header, sizeof(header));
     if (n < sizeof(header)) return 1;
 
-    *msgType = header.msgType;
+    *msgType = (MessageType)header.msgType;
     *msgLength = header.msgLength;
 
     // Read in the message
@@ -148,7 +154,8 @@ int getMessage(uint8_t *msgType, uint8_t *msgLength, uint8_t *msg)
     if (n < header.msgLength) return 1;
 
     // Perform a CRC16 check on the message
-    uint16_t crc = calcCrc16(msg, header.msgLength);
+    uint16_t crc = calcCrc16((uint8_t *)&header, 2);
+    crc = calcCrc16(msg, header.msgLength, crc);
     if (crc != header.crc) return 2;
 
     return 0;

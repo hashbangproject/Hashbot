@@ -6,6 +6,6 @@
 
 #include <stdint.h>
 
-uint16_t calcCrc16(const uint8_t *buff, int buffSize);
+uint16_t calcCrc16(const uint8_t *buff, int buffSize, uint16_t initCrc = 0);
 
 #endif

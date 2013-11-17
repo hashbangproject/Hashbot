@@ -40,10 +40,10 @@ static const uint16_t crcTable[256] =
     0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
 };
 
-uint16_t calcCrc16(const uint8_t *buff, int buffSize)
+uint16_t calcCrc16(const uint8_t *buff, int buffSize, uint16_t initCrc)
 {
     int i;
-    uint16_t crc = 0;
+    uint16_t crc = initCrc;
 
     for (i = 0; i < buffSize; i++)
         crc = (crc << 8) ^ crcTable[((crc >> 8) ^ buff[i]) & 0xFF];

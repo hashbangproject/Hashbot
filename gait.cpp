@@ -72,7 +72,11 @@ const float StagSystem::liftHeight = 1;
 
 StagSystem::StagSystem():
     tMicros(0),
-    periodMicros(1000000)
+    periodMicros(1000000),
+    xSpeed(0.f),
+    ySpeed(0.f),
+    rotation(0.f),
+    zOffset(0.f)
 {
     // 0--1     x
     // |  |     |_ y
@@ -91,12 +95,20 @@ StagSystem::StagSystem():
     legs[3] = Leg(-dimensions.x/2.f, -dimensions.y/2.f, dimensions.z, 0.25f, 0.8f, lPelvis, lUpperLeg, lLowerLeg, false, true);
 }
 
-void StagSystem::moveLegs(float x, float y, float rotation, float zOffset)
+void StagSystem::setSpeed(float x, float y, float rot, float zOff)
+{
+    xSpeed = x;
+    ySpeed = y;
+    rotation = rot;
+    zOffset = zOff;
+}
+
+void StagSystem::moveLegs()
 {
     unsigned long dTMicros = micros() - tMicros;
     tMicros += dTMicros;
 
-    vector position(x, y, zOffset); // TODO: scale
+    vector position(xSpeed, ySpeed, zOffset); // TODO: scale
     float theta = rotation; // TODO: multiply by some constant
     float phase = (float)tMicros/periodMicros; //TODO: pause phase and dPhase when not moving
     float dPhase = (float)dTMicros/periodMicros;

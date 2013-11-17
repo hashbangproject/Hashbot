@@ -28,7 +28,8 @@ class StagSystem
 {
 public:
     StagSystem();
-    void moveLegs(float x, float y, float rotation, float zOffset);
+    void setSpeed(float x, float y, float rot, float zOff);
+    void moveLegs();
     void getLeg(int leg, float *pAngle1, float *pAngle2, float *pAngle3);
 private:
     class Leg
@@ -43,17 +44,25 @@ private:
         //vector (to)_(reference)
         vector hip_cog;
         vector foot_hip;
+
         //gait factors (0..1)
         float offset;
         float duty;
+
         //leg dimensions (cm)
         float lPelvis;
         float lUpperLeg;
         float lLowerLeg;
+
         //angle parameters
         bool isFront;
         bool isLeft;
     };
+
+    float xSpeed;
+    float ySpeed;
+    float rotation;
+    float zOffset;
 
     unsigned long tMicros;
     unsigned long periodMicros;

@@ -39,6 +39,7 @@ SECTIONS
     .bss    :   > SRAM
     .sysmem :   > SRAM
     .stack  :   > SRAM
+    .init_array :   > SRAM
 }
 
 __STACK_TOP = __stack + 1024;
