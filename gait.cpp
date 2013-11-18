@@ -76,7 +76,7 @@ StagSystem::StagSystem():
     xSpeed(0.f),
     ySpeed(0.f),
     rotation(0.f),
-    zOffset(0.f)
+    zOffset(100.f)
 {
     // 0--1     x
     // |  |     |_ y
@@ -95,11 +95,19 @@ StagSystem::StagSystem():
     legs[3] = Leg(-dimensions.x/2.f, -dimensions.y/2.f, dimensions.z, 0.25f, 0.8f, lPelvis, lUpperLeg, lLowerLeg, false, true);
 }
 
-void StagSystem::setSpeed(float x, float y, float rot, float zOff)
+void StagSystem::setSpeed(float x, float y)
 {
     xSpeed = x;
     ySpeed = y;
+}
+
+void StagSystem::setRotation(float rot)
+{
     rotation = rot;
+}
+
+void StagSystem::setHeight(float zOff)
+{
     zOffset = zOff;
 }
 

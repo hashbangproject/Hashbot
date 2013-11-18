@@ -1,11 +1,13 @@
 // Copyright (C) 2013 Project Hashbang
 // Created by Sultan Qasim Khan
 
+#include <stellarino.h>
 #include <messaging.h>
 
 void handleMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg)
 {
-    // TODO: Global interrupt disable
+    // Global interrupt disable
+    ROM_IntMasterDisable();
 
     switch (msgType)
     {
@@ -20,7 +22,8 @@ void handleMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg)
         break;
     }
 
-    // TODO: Global interrupt enable
+    // Global interrupt enable
+    ROM_IntMasterEnable();
 }
 
 void confirmMessage(MessageType msgType)

@@ -28,7 +28,9 @@ class StagSystem
 {
 public:
     StagSystem();
-    void setSpeed(float x, float y, float rot, float zOff);
+    void setSpeed(float x, float y);
+    void setRotation(float rot);
+    void setHeight(float zOff);
     void moveLegs();
     void getLeg(int leg, float *pAngle1, float *pAngle2, float *pAngle3);
 private:

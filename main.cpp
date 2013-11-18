@@ -28,54 +28,41 @@ int main() {
 }
 */
 
-/*
-StagSystem stag;
-int main()
-{
-    int i, n = 0;
-    float a, b, c;
-
-    init();
-    resetMicros();
-
-    stag.setSpeed(15, 0, 0, 100);
-
-    for (n = 0; n < 20; n++)
-    {
-        stag.moveLegs();
-        for (i = 0; i < 4; i++)
-        {
-            stag.getLeg(i, &a, &b, &c);
-            puts("Leg ");
-            puti(i+1);
-            puts(" Angle1: ");
-            putf(a, 3);
-            puts(" Angle2: ");
-            putf(b, 3);
-            puts(" Angle3: ");
-            putf(c, 3);
-            putln();
-        }
-        putln();
-        delay(50);
-    }
-}
-*/
-
 StagSystem g_stag;
 uint8_t g_msgBody[256];
 
+extern "C"
+{
+void stagInterrupt(void);
+void statusInterrupt(void);
+}
+
 int main()
 {
-    // Initialize
     init();
     resetMicros();
     enableMessaging();
 
-    // TODO: Set up the stag walking timer interrupt at 50ms
+    // We will use WTIMER0 for the interrupts
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_WTIMER0);
+    ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_WTIMER0);
+    ROM_TimerConfigure(WTIMER0_BASE, (TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC | TIMER_CFG_B_PERIODIC));
 
-    // TODO: Set general sensor/status interrrupt at some interval
-    // This interrupt will send battery voltage, darts fired etc.
+    // Set up the stag walking timer interrupt
+    ROM_TimerPrescaleSet(WTIMER0_BASE, TIMER_A, 79999); // 1 ms per tick
+    TimerIntRegister(WTIMER0_BASE, TIMER_A, stagInterrupt);
+    ROM_TimerLoadSet(WTIMER0_BASE, TIMER_A, 50);        // 50 ms per cylce
+    ROM_TimerIntEnable(WTIMER0_BASE, TIMER_TIMA_TIMEOUT);
+    ROM_TimerEnable(WTIMER0_BASE, TIMER_A);
+
+    // Set general sensor/status interrupt
+    ROM_TimerPrescaleSet(WTIMER0_BASE, TIMER_B, 79999); // 1 ms per tick
+    TimerIntRegister(WTIMER0_BASE, TIMER_B, statusInterrupt);
+    ROM_TimerLoadSet(WTIMER0_BASE, TIMER_B, 500);       // 500 ms per cycle
+    ROM_TimerIntEnable(WTIMER0_BASE, TIMER_TIMB_TIMEOUT);
+    ROM_TimerEnable(WTIMER0_BASE, TIMER_B);
+
+    g_stag.setSpeed(15, 0);
 
     uint8_t msgLength;
     MessageType msgType;
@@ -96,4 +83,36 @@ int main()
             break;
         }
     }
+}
+
+void stagInterrupt(void)
+{
+    g_stag.moveLegs();
+
+    float a, b, c;
+
+    // TODO: Actually set the servo positions based off the angles
+    for (int i = 0; i < 4; i++)
+    {
+        g_stag.getLeg(i, &a, &b, &c);
+        puts("Leg ");
+        puti(i+1);
+        puts(" Angle1: ");
+        putf(a, 3);
+        puts(" Angle2: ");
+        putf(b, 3);
+        puts(" Angle3: ");
+        putf(c, 3);
+        putln();
+    }
+    putln();
+
+    ROM_TimerIntClear(WTIMER0_BASE, TIMER_TIMA_TIMEOUT);
+}
+
+void statusInterrupt(void)
+{
+    // TODO: Send battery voltage, other status info
+
+    ROM_TimerIntClear(WTIMER0_BASE, TIMER_TIMB_TIMEOUT);
 }

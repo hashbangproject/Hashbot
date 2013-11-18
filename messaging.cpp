@@ -6,7 +6,7 @@
 #include <crc.h>
 #include <messaging.h>
 
-#define UART_PORT 2
+#define UART_PORT 5 //2
 #define MESSAGE_TIMEOUT 500 // ms
 
 #define NIBBLE2ASCII(x) ((x) < 0x0A ? '0' + (x) : 'A' + (x) - 0x0A)
@@ -99,7 +99,7 @@ static int readHex(uint8_t *buff, int buffSize)
 }
 
 
-void enableMessaging()
+void enableMessaging(void)
 {
     enableUART(UART_PORT, 115200);
 }

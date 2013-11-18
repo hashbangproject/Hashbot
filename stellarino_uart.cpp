@@ -364,6 +364,13 @@ void UARTputf(uint8_t UART, float f, uint8_t decimal) {
         f = -f;
     }
 
+    // Check that the number is not too big.
+    if (f > 1e11)
+    {
+        UARTputs(UART, "BIG_FLOAT");
+        return;
+    }
+
     if (decimal) {
         f *= power(10, decimal);
 

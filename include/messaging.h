@@ -42,6 +42,8 @@ typedef enum
     CRC_ERROR
 } ErrorCode;
 
+void enableMessaging(void);
+
 void putMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg);
 int getMessage(MessageType *msgType, uint8_t *msgLength, uint8_t *msg);
 
