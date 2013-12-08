@@ -28,6 +28,35 @@ int main() {
 }
 */
 
+static const unsigned char legPins[12] =
+{
+    PB5, PB0, PD0,  // Leg 1
+    PB1, PD1, PD3,  // Leg 2
+    PB2, PB3, PC4,  // Leg 3
+    PC5, PB7, PB6   // Leg 4
+};
+
+/*
+static const float jointMinMaxAngles[12][2] =
+{
+    {0.2f, 0.205f}, {0.5f, 1.0f}, {1.4f, 1.5f},     // Leg 1
+    {0.2f, 0.205f}, {0.5f, 1.0f}, {1.4f, 1.5f},     // Leg 2
+    {0.2f, 0.205f}, {-1.0f, -0.5f}, {-1.5f, 1.4f},  // Leg 3
+    {0.2f, 0.205f}, {-1.0f, -0.5f}, {-1.5f, 1.4f}   // Leg 4
+};
+*/
+
+static const float angleToPulseFactor = 752.0f;
+
+// Servo Pulse ~= servoPulseOffset + angleInRadians*angleToPulseFactor
+static const short servoPulseOffset[12] =
+{
+    1350, 930, 410,     // Leg 1
+    1350, 930, 410,     // Leg 2
+    1350, 2060, 2590,   // Leg 3
+    1350, 2060, 2590    // Leg 4
+};
+
 StagSystem g_stag;
 uint8_t g_msgBody[256];
 
@@ -42,6 +71,10 @@ int main()
     init();
     resetMicros();
     enableMessaging();
+
+    // Set up the pins
+    int i;
+    for (i = 0; i < 12; i++) pinMode(legPins[i], OUTPUT_SERVO);
 
     // We will use WTIMER0 for the interrupts
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_WTIMER0);
@@ -95,16 +128,22 @@ void stagInterrupt(void)
     for (int i = 0; i < 4; i++)
     {
         g_stag.getLeg(i, &a, &b, &c);
+
         puts("Leg ");
         puti(i+1);
-        puts(" Angle1: ");
-        putf(a, 3);
-        puts(" Angle2: ");
-        putf(b, 3);
-        puts(" Angle3: ");
-        putf(c, 3);
+        puts(" Value1: ");
+        puti(servoPulseOffset[i*3] + a*angleToPulseFactor);
+        puts(" Value2: ");
+        puti(servoPulseOffset[i*3 + 1] + b*angleToPulseFactor);
+        puts(" Value3: ");
+        puti(servoPulseOffset[i*3 + 2] + c*angleToPulseFactor);
         putln();
+
+        servoWrite(legPins[i*3], servoPulseOffset[i*3] + a*angleToPulseFactor);
+        servoWrite(legPins[i*3 + 1], servoPulseOffset[i*3 + 1] + b*angleToPulseFactor);
+        servoWrite(legPins[i*3 + 2], servoPulseOffset[i*3 + 2] + c*angleToPulseFactor);
     }
+
     putln();
 
     ROM_TimerIntClear(WTIMER0_BASE, TIMER_TIMA_TIMEOUT);

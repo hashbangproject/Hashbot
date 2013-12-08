@@ -35,7 +35,7 @@ vector vector::operator+(vector other)
 vector vector::operator-() //unary negate
 {
     vector ret;
-    arm_scale_f32(p, -1, p, 3);
+    arm_scale_f32(p, -1, ret.p, 3);
     return ret;
 }
 
@@ -68,7 +68,7 @@ void vector::rotate(float theta, vector center)
 
 
 
-const float StagSystem::liftHeight = 1;
+const float StagSystem::liftHeight = 10;
 
 StagSystem::StagSystem():
     tMicros(0),
@@ -176,8 +176,8 @@ void StagSystem::Leg::moveLeg(vector position, float theta, float phase, float d
         // Move toward target
         if(1 - phase > dPhase)
         {
-            foot_hip.x += (foot_hip.x - target.x) * dPhase/(1-phase);
-            foot_hip.y += (foot_hip.y - target.y) * dPhase/(1-phase);
+            foot_hip.x += (target.x - foot_hip.x) * dPhase/(1-phase);
+            foot_hip.y += (target.y - foot_hip.y) * dPhase/(1-phase);
             foot_hip.z = position.z - StagSystem::liftHeight;
         }
         else

@@ -185,8 +185,8 @@ void analogWrite(unsigned char pin, short val) {
 void servoWrite(unsigned char pin, short val) {
     long period;
 
-    if (val < 600) val = 600;
-    else if (val > 2400) val = 2400;
+    if (val < 450) val = 450;
+    else if (val > 2550) val = 2550;
     period = 1600000 - (80 * val);
 
     if (pinMux[pin][0] < 6)	// Narrow timers need a prescaler
