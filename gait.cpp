@@ -72,7 +72,7 @@ const float StagSystem::liftHeight = 10;
 
 StagSystem::StagSystem():
     tMicros(0),
-    periodMicros(1000000),
+    periodMicros(5000000),
     xSpeed(0.f),
     ySpeed(0.f),
     rotation(0.f),

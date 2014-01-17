@@ -95,7 +95,7 @@ int main()
     ROM_TimerIntEnable(WTIMER0_BASE, TIMER_TIMB_TIMEOUT);
     ROM_TimerEnable(WTIMER0_BASE, TIMER_B);
 
-    g_stag.setSpeed(15, 0);
+    g_stag.setSpeed(30, 0);
 
     uint8_t msgLength;
     MessageType msgType;
@@ -124,11 +124,11 @@ void stagInterrupt(void)
 
     float a, b, c;
 
-    // TODO: Actually set the servo positions based off the angles
     for (int i = 0; i < 4; i++)
     {
         g_stag.getLeg(i, &a, &b, &c);
 
+        /*
         puts("Leg ");
         puti(i+1);
         puts(" Value1: ");
@@ -138,6 +138,7 @@ void stagInterrupt(void)
         puts(" Value3: ");
         puti(servoPulseOffset[i*3 + 2] + c*angleToPulseFactor);
         putln();
+        */
 
         servoWrite(legPins[i*3], servoPulseOffset[i*3] + a*angleToPulseFactor);
         servoWrite(legPins[i*3 + 1], servoPulseOffset[i*3 + 1] + b*angleToPulseFactor);
