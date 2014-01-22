@@ -12,14 +12,6 @@
 #define NIBBLE2ASCII(x) ((x) < 0x0A ? '0' + (x) : 'A' + (x) - 0x0A)
 #define ASCII2NIBBLE(x) ((x) >= 'A' ? (x) - 'A' + 0x0A : (x) - '0')
 
-typedef struct MsgHeaderStruct
-{
-    uint8_t msgType;
-    uint8_t msgLength;
-    uint16_t crc;
-} MsgHeader;
-
-
 // The output buffer must be at least double the length of the input buffer
 static inline uint8_t *toHex(uint8_t input)
 {
@@ -105,13 +97,19 @@ void enableMessaging(void)
 }
 
 
-void putMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg)
+void putMessage(MessageType msgType, uint16_t msgLength, uint16_t flags, const uint8_t *msg)
 {
+    static uint32_t curId = 0;  // Nasty way
+
     MsgHeader header;
-    header.msgType = (uint8_t)msgType;
-    header.msgLength = msgLength;
-    header.crc = calcCrc16((uint8_t *)&header, 2);
+    header.type = (uint16_t)msgType;
+    header.flags = flags;
+    header.length = msgLength;
+    header.id = curId;
+    header.crc = calcCrc16((uint8_t *)&header + 2, sizeof(MsgHeader) - 2);
     header.crc = calcCrc16(msg, msgLength, header.crc);
+
+    curId++;
 
     // Start the message
     UARTputc(UART_PORT, '#');
@@ -128,7 +126,7 @@ void putMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg)
 
 
 // Returns 0 for success, 1 for timeout, 2 for CRC failure
-int getMessage(MessageType *msgType, uint8_t *msgLength, uint8_t *msg)
+int getMessage(MessageType *msgType, uint16_t *msgLength, uint16_t *flags, uint8_t *msg)
 {
     int c, n;
 
@@ -146,16 +144,17 @@ int getMessage(MessageType *msgType, uint8_t *msgLength, uint8_t *msg)
     n = readHex((uint8_t *)&header, sizeof(header));
     if (n < sizeof(header)) return 1;
 
-    *msgType = (MessageType)header.msgType;
-    *msgLength = header.msgLength;
+    *msgType = (MessageType)header.type;
+    *msgLength = header.length;
+    *flags = header.flags;
 
     // Read in the message
-    n = readHex(msg, header.msgLength);
-    if (n < header.msgLength) return 1;
+    n = readHex(msg, header.length);
+    if (n < header.length) return 1;
 
     // Perform a CRC16 check on the message
-    uint16_t crc = calcCrc16((uint8_t *)&header, 2);
-    crc = calcCrc16(msg, header.msgLength, crc);
+    uint16_t crc = calcCrc16((uint8_t *)&header + 2, sizeof(header) - 2);
+    crc = calcCrc16(msg, header.length, crc);
     if (crc != header.crc) return 2;
 
     return 0;

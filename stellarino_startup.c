@@ -29,20 +29,20 @@ extern unsigned long __STACK_TOP;
 
 void (* const g_pfnVectors[])(void) =
 {
-    (void (*)(void))((unsigned long)&__STACK_TOP),	// Initial stack pointer
-    ResetISR,                               		// Reset handler
-    GenericISR										// Everything else handler
+    (void (*)(void))((unsigned long)&__STACK_TOP),  // Initial stack pointer
+    ResetISR,                                       // Reset handler
+    GenericISR                                      // Everything else handler
 };
 
 // Initializes C and starts program
-void ResetISR(void) {
+void ResetISR(void)
+{
     __asm("    .global _c_int00\n"
           "    b.w     _c_int00");
 }
 
 // This interrupt handler does nothing
-static void GenericISR(void) {
+static void GenericISR(void)
+{
     while(1);
 }
-
-

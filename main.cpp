@@ -66,7 +66,7 @@ void stagInterrupt(void);
 void statusInterrupt(void);
 }
 
-int main()
+int cppmain()
 {
     init();
     resetMicros();
@@ -97,13 +97,14 @@ int main()
 
     g_stag.setSpeed(30, 0);
 
-    uint8_t msgLength;
+    uint16_t msgLength;
+    uint16_t msgFlags;
     MessageType msgType;
 
     // Main message handing loop
     while (1)
     {
-        switch (getMessage(&msgType, &msgLength, g_msgBody))
+        switch (getMessage(&msgType, &msgLength, &msgFlags, g_msgBody))
         {
         case 0: // Success
             handleMessage(msgType, msgLength, g_msgBody);
@@ -116,6 +117,14 @@ int main()
             break;
         }
     }
+}
+
+extern "C"
+{
+int main2()
+{
+    return cppmain();
+}
 }
 
 void stagInterrupt(void)

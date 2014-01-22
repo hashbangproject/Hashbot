@@ -17,7 +17,7 @@ void handleMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg)
     switch (msgType)
     {
     case PING_MSG:
-        putMessage(PONG_MSG, 0, NULL);
+        putMessage(PONG_MSG, 0, 0, NULL);
         break;
     case PONG_MSG:
         sendError(UNEXPECTED_MESSAGE_ERROR);
@@ -40,11 +40,11 @@ void handleMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg)
 void confirmMessage(MessageType msgType)
 {
     uint8_t body = (uint8_t)msgType;
-    putMessage(CONFIRMATION_MSG, 1, &body);
+    putMessage(CONFIRMATION_MSG, 1, 0, &body);
 }
 
 void sendError(ErrorCode err)
 {
     uint8_t body = (uint8_t)err;
-    putMessage(ERROR_MSG, 1, &body);
+    putMessage(ERROR_MSG, 1, 0, &body);
 }

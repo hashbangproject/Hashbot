@@ -6,6 +6,15 @@
 
 #include <stdint.h>
 
+typedef struct MsgHeaderStruct
+{
+    uint16_t crc;
+    uint16_t type;
+    uint16_t flags;
+    uint16_t length;
+    uint32_t id;
+} MsgHeader;
+
 typedef enum
 {
     PING_MSG,           // The recipient will reply with a PONG_MSG
@@ -44,8 +53,8 @@ typedef enum
 
 void enableMessaging(void);
 
-void putMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg);
-int getMessage(MessageType *msgType, uint8_t *msgLength, uint8_t *msg);
+void putMessage(MessageType msgType, uint16_t msgLength, uint16_t flags, const uint8_t *msg);
+int getMessage(MessageType *msgType, uint16_t *msgLength, uint16_t *flags, uint8_t *msg);
 
 void handleMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg);
 void confirmMessage(MessageType msgType);
