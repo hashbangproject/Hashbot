@@ -64,7 +64,6 @@ extern "C"
 {
 void stagInterrupt(void);
 void statusInterrupt(void);
-}
 
 int cppmain()
 {
@@ -119,13 +118,7 @@ int cppmain()
     }
 }
 
-extern "C"
-{
-int main2()
-{
-    return cppmain();
-}
-}
+} // end extern "C"
 
 void stagInterrupt(void)
 {
