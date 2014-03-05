@@ -74,7 +74,6 @@ void putMessage(MessageType msgType, uint16_t msgLength, uint16_t flags, const u
 int getMessage(MessageType *msgType, uint16_t *msgLength, uint16_t *flags, uint8_t *msg);
 
 void handleMessage(MessageType msgType, uint8_t msgLength, const uint8_t *msg);
-void confirmMessage(MessageType msgType);
 void sendError(ErrorCode err);
 
 #endif
