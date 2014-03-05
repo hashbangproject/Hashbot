@@ -66,8 +66,6 @@ int cppmain()
     ROM_TimerIntEnable(WTIMER0_BASE, TIMER_TIMB_TIMEOUT);
     ROM_TimerEnable(WTIMER0_BASE, TIMER_B);
 
-    g_stag.setSpeed(30, 0);
-
     uint16_t msgLength;
     uint16_t msgFlags;
     MessageType msgType;

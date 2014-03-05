@@ -20,11 +20,7 @@ typedef struct MsgHeaderStruct
 // Message id is incremented with every message sent
 // Even message ids are from the controlling computer, odd message ids are from the robot
 
-// I forgot the original spec, so I will implement something similar to what I recall
-typedef enum
-{
-    CONFIRMATION_NEEDED_FLAG
-} MessageFlags;
+#define CONFIRMATION_NEEDED_FLAG 0x01
 
 typedef enum
 {
@@ -50,7 +46,7 @@ typedef enum
 
     // Geophilosophical messages
     OBJECTIVIST_MSG,    // The robot will try to think rationally
-    POSITIVIST_MSG,     // The robot will follow the scientific methid
+    POSITIVIST_MSG,     // The robot will follow the scientific method
     HUMANIST_MSG,       // The robot will try to relate to the feelings of those it is attacking
     FEMINIST_MSG,       // The robot will divorce her owner and take 2/3 of his money
     COMMUNIST_MSG,      // The robot will push for it to be the most equal of all robots
@@ -58,7 +54,7 @@ typedef enum
 
     // Possible Messages
     SET_HEIGHT_MSG,     // Sent by the host to indicate the walking height for the robot
-    SET_TURRET_MSG     // Sent by the host to set the turret rotation speed/direction
+    SET_TURRET_MSG      // Sent by the host to set the turret rotation speed/direction
 } MessageType;
 
 // Error codes for error messages
