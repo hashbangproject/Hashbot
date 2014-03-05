@@ -125,6 +125,13 @@ void putMessage(MessageType msgType, uint16_t msgLength, uint16_t flags, const u
 }
 
 
+
+void confirmMessage(uint32_t msgId)
+{
+    putMessage(CONFIRMATION_MSG, sizeof(uint32_t), 0, (uint8_t *)&msgId);
+}
+
+
 // Returns 0 for success, 1 for timeout, 2 for CRC failure
 int getMessage(MessageType *msgType, uint16_t *msgLength, uint16_t *flags, uint8_t *msg)
 {
@@ -148,6 +155,9 @@ int getMessage(MessageType *msgType, uint16_t *msgLength, uint16_t *flags, uint8
     *msgLength = header.length;
     *flags = header.flags;
 
+    // Avoid buffer overflows
+    if (header.length > MAX_MESSAGE_LENGTH) header.length = MAX_MESSAGE_LENGTH;
+
     // Read in the message
     n = readHex(msg, header.length);
     if (n < header.length) return 1;
@@ -156,6 +166,8 @@ int getMessage(MessageType *msgType, uint16_t *msgLength, uint16_t *flags, uint8
     uint16_t crc = calcCrc16((uint8_t *)&header + 2, sizeof(header) - 2);
     crc = calcCrc16(msg, header.length, crc);
     if (crc != header.crc) return 2;
+
+    if (header.flags & CONFIRMATION_NEEDED_FLAG) confirmMessage(header.id);
 
     return 0;
 }

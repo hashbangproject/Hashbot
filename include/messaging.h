@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 
+#define MAX_MESSAGE_LENGTH 512
+
 typedef struct MsgHeaderStruct
 {
     uint16_t crc;
@@ -15,31 +17,48 @@ typedef struct MsgHeaderStruct
     uint32_t id;
 } MsgHeader;
 
+// Message id is incremented with every message sent
+// Even message ids are from the controlling computer, odd message ids are from the robot
+
+// I forgot the original spec, so I will implement something similar to what I recall
 typedef enum
 {
-    PING_MSG,           // The recipient will reply with a PONG_MSG
-    PONG_MSG,           // Reply to a PING_MSG
-    CONFIRMATION_MSG,   // Sent by the recipient of a message to confirm receipt
-                        // The message body should be the message type of the received message
-                        // This will only be sent for safety critical messages
+    CONFIRMATION_NEEDED_FLAG
+} MessageFlags;
 
-    // Safety Critical Messages
-    // Thus far, all these messages are sent from the host
-    ENABLE_MSG,         // Message to enable the servos and air dart at a software level
-    DISABLE_MSG,        // Message to disable the servos and air dart at a software level
-    SINGLE_FIRE_MSG,    // Fire a single dart
-    START_CONT_FIRE_MSG,// Start firing darts continuously
-    STOP_CONT_FIRE_MSG, // Stop firing darts continuously
-    ERROR_MSG,          // An error occurred (body will hold error code)
+typedef enum
+{
+    CONFIRMATION_MSG = 0,   // Sent by the recipient of a message to confirm receipt
+                            // The message body should be the message id of the received message
+                            // This will only be sent for safety critical messages
 
-    // Non-Safety Critical Messages
-    SET_SPEED_MSG,      // Sent by the host to indicate XY walking speed (based off joystick)
+    // Safety Critical Messages (will request a confirmation)
+    PING_MSG = 1,           // The sender just wants a confirmation
+    MODE_MSG = 2,           // Message will be a RobotModeStruct
+    ERROR_MSG = 3,          // An error occurred (body will hold error code)
+
+    // Other messages
+    MOVE_MSG = 4,           // Contains a MoveMessage struct
+    MOVE_JOINT_MSG = 5,     // Contains a MoveJointMessage struct
+    MOVE_JOINTS_MSG = 6,    // Contains a MoveJointsMessage struct
+    BODY_SENSOR_MSG = 7,    // Contains high frequency sensor readings
+    SYSTEM_STATUS_MSG = 8,  // Contains battery status and other low frequency status info
+
+    // Push notifications
+    TARGET_HIT_MSG = 9,     // Sent automatically by the robot to the host when hit
+    DEATH_MSG = 10,         // Sent automatically when the robot runs out of health
+
+    // Geophilosophical messages
+    OBJECTIVIST_MSG,    // The robot will try to think rationally
+    POSITIVIST_MSG,     // The robot will follow the scientific methid
+    HUMANIST_MSG,       // The robot will try to relate to the feelings of those it is attacking
+    FEMINIST_MSG,       // The robot will divorce her owner and take 2/3 of his money
+    COMMUNIST_MSG,      // The robot will push for it to be the most equal of all robots
+    POSTMODERNIST_MSG,  // The robot will stop following its master and will start criticising her/him
+
+    // Possible Messages
     SET_HEIGHT_MSG,     // Sent by the host to indicate the walking height for the robot
-    SET_TURRET_MSG,     // Sent by the host to set the turret rotation speed/direction
-    BATTERY_MSG,        // Sent automatically by the robot to the host periodically
-    LEG_POSITION_MSG,   // Sent automatically by the robot to the host every 50 ms
-    SENSOR_READING_MSG, // Sent automatically by the robot to the host periodically
-    TARGET_HIT_MSG      // Sent automatically by the robot to the host when hit
+    SET_TURRET_MSG     // Sent by the host to set the turret rotation speed/direction
 } MessageType;
 
 // Error codes for error messages
@@ -50,6 +69,8 @@ typedef enum
     TIMEOUT_ERROR,
     CRC_ERROR
 } ErrorCode;
+
+typedef void (*msgHandler_t)(uint8_t msgLength, const uint8_t *msg);
 
 void enableMessaging(void);
 
