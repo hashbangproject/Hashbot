@@ -2,7 +2,7 @@
 // Created by Andrew Yang
 
 #include "Classes.h"
-#include <cstdint>
+#include <stdint.h>
 #include <cmath>
 #include <stellarino.h> // for micros()
 
@@ -120,11 +120,8 @@ const unsigned long StagSystem::gaitPeriod[GaitType::GAIT_TYPES] =
 };
 
 StagSystem::StagSystem():
-<<<<<<< HEAD
     tMicros(0),
     periodMicros(2000000),
-=======
->>>>>>> e4671668a3e5a73ec680cacae8e63b72a9245a89
     xSpeed(0.f),
     ySpeed(0.f),
     rotation(0.f),
