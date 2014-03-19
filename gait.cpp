@@ -1,65 +1,77 @@
 // Copyright (C) 2013 Project Hashbang
 // Created by Andrew Yang
 
-#include <gait.h>
-#include <stdint.h>
-#include <math.h> //should be unnecessary if using the dsp library
+#include "Classes.h"
+#include <cstdint>
+#include <cmath>
 #include <stellarino.h> // for micros()
 
-//arm function prototypes
-static inline void arm_add_f32(float *pSrcA, float *pSrcB, float *pDst, uint32_t blockSize){ for(int n=0; n<blockSize; n++) pDst[n] = pSrcA[n] + pSrcB[n]; }
-static inline void arm_scale_f32(float* src, float s, float* dst, int size){ for(int n=0; n<size; n++) dst[n] = s*src[n]; }
-static inline float arm_cos_f32(float x) { return cos(x); }
-static inline float arm_sin_f32(float x) { return sin(x); }
-static inline void arm_sqrt_f32(float in, float *pOut) { *pOut = sqrt(in); }
-
-vector::vector() : x(p[0]), y(p[1]), z(p[2]) {}
-
-vector::vector(const vector &v) : x(p[0]), y(p[1]), z(p[2])
+// helper functions
+static inline float interpolate(float i1, float i2, float o1, float o2, float x)
 {
-    operator =(v);
+    return o1 + (o2-o1)*(x-i1)/(i2-i1);
 }
 
-vector::vector(float x, float y, float z) : x(p[0]), y(p[1]), z(p[2])
+static inline float mix(float o1, float o2, float x)
 {
-    p[0] = x; p[1] = y; p[2] = z;
+    return o1 + (o2-o1)*x;
 }
 
-vector vector::operator+(vector other)
+static inline float sqr(float x)
 {
-    vector ret;
-    arm_add_f32(p, other.p, ret.p, 3);
-    return ret;
+    return x*x;
 }
 
-vector vector::operator-() //unary negate
+// implementation of vector
+
+vector vector::operator+(const vector &other) const
 {
-    vector ret;
-    arm_scale_f32(p, -1, ret.p, 3);
-    return ret;
+    return vector(x+other.x, y+other.y, z+other.z);
 }
 
-vector vector::operator*(float x)
+vector vector::operator-() const //unary negate
 {
-    vector ret;
-    arm_scale_f32(p, x, ret.p, 3);
-    return ret;
+    return vector(-x, -y, -z);
 }
+
+vector vector::operator-(const vector &other) const
+{
+    return vector(x-other.x, y-other.y, z-other.z);
+}
+
+vector vector::operator*(float x) const
+{
+    return vector(this->x*x, y*x, z*x);
+}
+
 vector & vector::operator*=(float x)
 {
-    arm_scale_f32(p, x, p, 3);
+    this->x *= x;
+    this->y *= x;
+    this->z *= x;
     return *this;
 }
 
-vector & vector::operator=(const vector &other) //copy
+vector & vector::operator+=(const vector &other)
 {
-    arm_scale_f32(const_cast<float*>(other.p), 1, p, 3);
+    x += other.x;
+    y += other.y;
+    z += other.z;
     return *this;
 }
+
+vector & vector::operator-=(const vector &other)
+{
+    x -= other.x;
+    y -= other.y;
+    z -= other.z;
+    return *this;
+}
+
 void vector::rotate(float theta, vector center)
 {
-    float cosTheta = arm_cos_f32(theta);
-    float sinTheta = arm_sin_f32(theta);
+    float cosTheta = cos(theta);
+    float sinTheta = sin(theta);
 
     float tx = x - center.x, ty = y - center.y;
     x = center.x + tx*cosTheta - ty*sinTheta;
@@ -67,16 +79,64 @@ void vector::rotate(float theta, vector center)
 }
 
 
+// implementation of gait classes
 
 const float StagSystem::liftHeight = 10;
+const float StagSystem::gaitOffsets[GaitType::GAIT_TYPES][4] = 
+{
+    {0.00f, 0.50f, 0.75f, 0.25f},
+    {0.00f, 0.50f, 1.00f, 0.50f},
+    {0.00f, 0.30f, 1.00f, 0.70f},
+    {0.00f, 0.10f, 0.60f, 0.50f},
+    {0.00f, 0.00f, 0.50f, 0.50f},
+    {0.00f, 0.00f, 0.00f, 0.00f},
+};
+const float StagSystem::gaitDuty[GaitType::GAIT_TYPES] = 
+{
+    0.80f,
+    0.75f,
+    0.75f,
+    0.65f,
+    0.55f,
+    0.55f
+};
+const float StagSystem::gaitShake[GaitType::GAIT_TYPES] = 
+{
+    3.f,
+    1.f,
+    0.5f,
+    0.f,
+    0.f,
+    0.f
+};
+const unsigned long StagSystem::gaitPeriod[GaitType::GAIT_TYPES] = 
+{
+    2000000,
+    1000000,
+    666666,
+    500000,
+    400000,
+    333333
+};
 
 StagSystem::StagSystem():
+<<<<<<< HEAD
     tMicros(0),
     periodMicros(2000000),
+=======
+>>>>>>> e4671668a3e5a73ec680cacae8e63b72a9245a89
     xSpeed(0.f),
     ySpeed(0.f),
     rotation(0.f),
-    zOffset(100.f)
+    zOffset(100.f),
+    gaitType(CRAWL),
+    shakeFactor(1.f),
+    duty(gaitDuty[0]),
+    tMicros(0),
+    periodMicros(2000000),
+
+    phase(0.f),
+    gaitTransition(CRAWL)
 {
     // 0--1     x
     // |  |     |_ y
@@ -84,15 +144,16 @@ StagSystem::StagSystem():
 
     // the below numbers should probably be member variables passed in as constructor parameters
     // they should also probably be given in units that make sense
-    vector cog(0.f, 0.f, -100.f);
-    vector dimensions(180.f, 140.f, -cog.z);
+    vector cog(0.f, 0.f, -90.f);
+    vector dimensions(155.f, 20.f, -cog.z);
     float lPelvis = 20.f;
     float lUpperLeg = 70.f;
-    float lLowerLeg = 60.f;
-    legs[0] = Leg(+dimensions.x/2.f, -dimensions.y/2.f, dimensions.z, 0.00f, 0.8f, lPelvis, lUpperLeg, lLowerLeg, true, true);
-    legs[1] = Leg(+dimensions.x/2.f, +dimensions.y/2.f, dimensions.z, 0.50f, 0.8f, lPelvis, lUpperLeg, lLowerLeg, true, false);
-    legs[2] = Leg(-dimensions.x/2.f, +dimensions.y/2.f, dimensions.z, 0.75f, 0.8f, lPelvis, lUpperLeg, lLowerLeg, false, false);
-    legs[3] = Leg(-dimensions.x/2.f, -dimensions.y/2.f, dimensions.z, 0.25f, 0.8f, lPelvis, lUpperLeg, lLowerLeg, false, true);
+    float lLowerLeg = 70.f;
+
+    legs[0] = new Leg(+dimensions.x/2.f, -dimensions.y/2.f, dimensions.z, gaitOffsets[0][0], duty, lPelvis, lUpperLeg, lLowerLeg, true, true);
+    legs[1] = new Leg(+dimensions.x/2.f, +dimensions.y/2.f, dimensions.z, gaitOffsets[0][1], duty, lPelvis, lUpperLeg, lLowerLeg, true, false);
+    legs[2] = new Leg(-dimensions.x/2.f, +dimensions.y/2.f, dimensions.z, gaitOffsets[0][2], duty, lPelvis, lUpperLeg, lLowerLeg, false, false);
+    legs[3] = new Leg(-dimensions.x/2.f, -dimensions.y/2.f, dimensions.z, gaitOffsets[0][3], duty, lPelvis, lUpperLeg, lLowerLeg, false, true);
 }
 
 void StagSystem::setSpeed(float x, float y)
@@ -111,31 +172,86 @@ void StagSystem::setHeight(float zOff)
     zOffset = zOff;
 }
 
-void StagSystem::moveLegs()
+void StagSystem::shiftGear(bool faster)
 {
+    if(faster && gaitType < GAIT_TYPES-1)
+        gaitType = (GaitType)(gaitType + 1);
+    if(!faster && gaitType > 0)
+        gaitType = (GaitType)(gaitType - 1);
+}
+
+void StagSystem::updateGait(float updateSpeed)
+{
+    if(gaitTransition > gaitType) gaitTransition -= updateSpeed;
+    if(gaitTransition < gaitType) gaitTransition += updateSpeed;
+    if(abs(gaitTransition-gaitType) < updateSpeed) gaitTransition = (float)gaitType;
+
+    float interpolationFactor = gaitTransition - (int)gaitTransition;
+    shakeFactor = mix(gaitShake[(int)gaitTransition],
+                      gaitShake[(int)gaitTransition+1],
+                      interpolationFactor);
+    periodMicros = mix(gaitPeriod[(int)gaitTransition],
+                       gaitPeriod[(int)gaitTransition+1],
+                       interpolationFactor);
+    duty = mix(gaitDuty[(int)gaitTransition],
+                       gaitDuty[(int)gaitTransition+1],
+                       interpolationFactor);
+    for(int i=0; i<4; i++)
+    {
+        legs[i]->offset = mix(gaitOffsets[(int)gaitTransition][i],
+                             gaitOffsets[(int)gaitTransition+1][i],
+                             interpolationFactor);
+    }
+}
+
+void StagSystem::moveLegs() 
+{
+    // timing
     unsigned long dTMicros = micros() - tMicros;
     tMicros += dTMicros;
 
+    // update gait parameters
+    updateGait(dTMicros/1000000.f);
+
     vector position(xSpeed, ySpeed, zOffset); // TODO: scale
     float theta = rotation; // TODO: multiply by some constant
-    float phase = (float)tMicros/periodMicros; //TODO: pause phase and dPhase when not moving
     float dPhase = (float)dTMicros/periodMicros;
+    phase += dPhase;
+    phase = phase - (int)phase;
 
-    for(int i=0; i<4; i++)
+    // stop if we're not actually moving
+    if(xSpeed == 0.f && ySpeed == 0.f && theta == 0.f)
     {
-        legs[i].moveLeg(position, theta, phase, dPhase);
+        for(int i=0; i<4; i++)
+        {
+            if(abs(phase - legs[i]->offset) <= 2.f*dPhase){
+                phase = legs[i]->offset;
+                break;
+            }
+        }
     }
+
+    // accumulate hip shake factor for each leg
+    cog_offset.x = cog_offset.y = 0.f;
+    float weight = 0.f;
+    for(int i=0; i<4; i++)
+        legs[i]->calculateHipShake(!(xSpeed == 0.f && ySpeed == 0.f && theta == 0.f), phase, &cog_offset, &weight);
+
+    cog_offset *= shakeFactor/weight;
+
+    // move each leg
+    for(int i=0; i<4; i++)
+        legs[i]->moveLeg(position, theta, phase, dPhase, cog_offset);
 }
 
 void StagSystem::getLeg(int leg, float *pAngle1, float *pAngle2, float *pAngle3)
 {
-
-    this->legs[leg].getAngles(pAngle1, pAngle2, pAngle3);
+    this->legs[leg]->getAngles(pAngle1, pAngle2, pAngle3);
 }
 
-StagSystem::Leg::Leg(float x, float y, float z, float offset, float duty, float lPelvis, float lUpperLeg, float lLowerLeg, bool isFront, bool isLeft) :
+StagSystem::Leg::Leg(float x, float y, float z, float offset, float &duty, float lPelvis, float lUpperLeg, float lLowerLeg, bool isFront, bool isLeft) :
         hip_cog(x,y,0),
-        foot_hip(0,0,z),
+        foot_hip(0,(!isLeft-isLeft)*lPelvis,z),
         offset(offset),
         duty(duty),
         lPelvis(lPelvis),
@@ -145,7 +261,29 @@ StagSystem::Leg::Leg(float x, float y, float z, float offset, float duty, float 
         isLeft(isLeft)
 {}
 
-void StagSystem::Leg::moveLeg(vector position, float theta, float phase, float dPhase)
+void StagSystem::Leg::calculateHipShake(float magnitude, float phase, vector *accumulate, float *weight)
+{
+    //offset StagSystem phase to our own phase
+    phase += offset;
+    phase -= (int)phase;
+
+    float hipShake = 0.f;
+    if(phase < duty*0.6) // leg on ground
+        hipShake = interpolate(0, duty*0.6, 2.f, 1.f, phase);
+    else if(phase < duty) // leg about to lift (get away from there!)
+        hipShake = interpolate(duty*0.6, duty, 1.f, -0.5f, phase);
+    else if(phase < 0.7+0.3*duty) // leg in air
+        hipShake = interpolate(duty, 0.7+0.3*duty, -0.5f, 0.2f, phase);
+    else // leg about to land (get there quickly!)
+        hipShake = interpolate(0.7+0.3*duty, 1.f, 0.2f, 2.f, phase);
+
+    hipShake = mix(1.f, hipShake, magnitude);
+    accumulate->x += hipShake * (hip_cog.x+foot_hip.x);
+    accumulate->y += hipShake * (hip_cog.y+foot_hip.y);
+    *weight += hipShake;
+}
+
+void StagSystem::Leg::moveLeg(const vector &position, float theta, float phase, float dPhase, const vector &cog_offset)
 {
     //offset StagSystem phase to our own phase
     phase += offset;
@@ -155,52 +293,42 @@ void StagSystem::Leg::moveLeg(vector position, float theta, float phase, float d
     {
         // Foot on ground
         // Move away from direction vector
+        foot_hip -= position * (2.f * (dPhase/duty));
         foot_hip.z = position.z;
-        foot_hip.x -= position.x * 2 * (dPhase/duty);
-        foot_hip.y -= position.y * 2 * (dPhase/duty);
+
         // Rotate
         if(theta != 0.f)
-        {
             foot_hip.rotate(-theta*(dPhase/duty), -hip_cog);
-        }
+        
+        // Compensate for cog_offset
+        foot_hip -= cog_offset*dPhase;
     }
     else
     {
         // Foot in air
         vector target = position;
+        target.y -= (isLeft-!isLeft)*lPelvis;
+        if(phase < 0.5f+duty*0.5f) target.z -= StagSystem::liftHeight;
+
         // Rotate
         if(theta != 0.f)
-        {
             target.rotate(theta*(1.f-duty), -hip_cog);
-        }
-        // Move toward target
-        if(1 - phase > dPhase)
-        {
-            foot_hip.x += (target.x - foot_hip.x) * dPhase/(1-phase);
-            foot_hip.y += (target.y - foot_hip.y) * dPhase/(1-phase);
-            foot_hip.z = position.z - StagSystem::liftHeight;
-        }
-        else
-        {
-            //last iteration
-            foot_hip = position;
-        }
+
+        if(1 - phase > dPhase) // Move toward target
+            foot_hip += (target - foot_hip) * (dPhase/(1.f-phase));
+        else //last iteration
+            foot_hip = target;
     }
 }
 
-//is there an arm function for doing this?
-inline float sqr(float x){ return x*x; }
 void StagSystem::Leg::getAngles(float *pAngle1, float *pAngle2, float *pAngle3)
 {
     float sign1 = isLeft ? -1.f : 1.f;
     float sign2 = isFront ? 1.f : -1.f;
-    float sqrtResult;
     const float pi = 3.14159265358f;
 
-    //the returned angles could be totally wrong. I'm not sure. haven't done any testing.
-    //TODO: error check the arm_sqrt_f32 return value. maybe. if we're not lazy.
-    arm_sqrt_f32(sqr(foot_hip.y)+sqr(foot_hip.z), &sqrtResult);
-    *pAngle1 = atan2(foot_hip.z,sign1*foot_hip.y) - acos(lPelvis/sqrtResult);
+    // Inverse Kinematics (i.e. black magic)
+    *pAngle1 = atan2(foot_hip.z,sign1*foot_hip.y) - acos(lPelvis/sqrtf(sqr(foot_hip.y)+sqr(foot_hip.z)));
     vector pelvis_hip
     (
         0.f,
@@ -209,7 +337,6 @@ void StagSystem::Leg::getAngles(float *pAngle1, float *pAngle2, float *pAngle3)
     );
 
     float fpDeltaSqr = sqr(foot_hip.x-pelvis_hip.x) + sqr(foot_hip.y-pelvis_hip.y) + sqr(foot_hip.z-pelvis_hip.z);
-    arm_sqrt_f32(fpDeltaSqr, &sqrtResult);
-    *pAngle2 = atan2(foot_hip.x, (foot_hip.z-pelvis_hip.z)/cos(*pAngle1)) + sign2*acos((sqr(lUpperLeg) + fpDeltaSqr - sqr(lLowerLeg))/(2.f * lUpperLeg * sqrtResult));
+    *pAngle2 = atan2(foot_hip.x, (foot_hip.z-pelvis_hip.z)/cos(*pAngle1)) + sign2*acos((sqr(lUpperLeg) + fpDeltaSqr - sqr(lLowerLeg))/(2.f * lUpperLeg * sqrtf(fpDeltaSqr)));
     *pAngle3 = sign2*pi - sign2*acos((sqr(lUpperLeg) + sqr(lLowerLeg) - fpDeltaSqr) / (2.f * lUpperLeg * lLowerLeg));
 }
