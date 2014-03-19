@@ -44,14 +44,6 @@ typedef enum
     TARGET_HIT_MSG = 9,     // Sent automatically by the robot to the host when hit
     DEATH_MSG = 10,         // Sent automatically when the robot runs out of health
 
-    // Geophilosophical messages
-    OBJECTIVIST_MSG,    // The robot will try to think rationally
-    POSITIVIST_MSG,     // The robot will follow the scientific method
-    HUMANIST_MSG,       // The robot will try to relate to the feelings of those it is attacking
-    FEMINIST_MSG,       // The robot will divorce her owner and take 2/3 of his money
-    COMMUNIST_MSG,      // The robot will push for it to be the most equal of all robots
-    POSTMODERNIST_MSG,  // The robot will stop following its master and will start criticising her/him
-
     // Possible Messages
     SET_HEIGHT_MSG,     // Sent by the host to indicate the walking height for the robot
     SET_TURRET_MSG      // Sent by the host to set the turret rotation speed/direction

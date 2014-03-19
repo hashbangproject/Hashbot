@@ -26,6 +26,11 @@ void delay(unsigned long nTime) {
     ROM_TimerEnable(WTIMER5_BASE, TIMER_A);
     ROM_SysCtlSleep();
 
+    // Make sure the timer finished, go back to sleep if it didn't
+    // (Another interrupt may have woken up the system)
+    while (ROM_TimerValueGet(WTIMER5_BASE, TIMER_A) != nTime * 10)
+        ROM_SysCtlSleep();
+
     ROM_TimerIntDisable(WTIMER5_BASE, TIMER_TIMA_TIMEOUT);
     ROM_TimerDisable(WTIMER5_BASE, TIMER_A);
 }

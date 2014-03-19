@@ -17,11 +17,16 @@
     along with Stellarino.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stellarino.h>
+
 void ResetISR(void);
 static void GenericISR(void);
 
 // Linker variable for top of stack
 extern unsigned long __STACK_TOP;
+
+// main
+extern int main(void);
 
 // Initial vector table
 
@@ -37,8 +42,19 @@ void (* const g_pfnVectors[])(void) =
 // Initializes C and starts program
 void ResetISR(void)
 {
-    __asm("    .global _c_int00\n"
-          "    b.w     _c_int00");
+    void (**p)() = (void (**)())0x200009ac;
+
+    // Set system clock to 80 MHz
+    ROM_SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+
+    // Enable FPU and allow floating point operations in interrupts
+    ROM_FPUEnable();
+    ROM_FPULazyStackingEnable();
+
+    // Call all the global constructors
+    (*p)();
+
+    main();
 }
 
 // This interrupt handler does nothing

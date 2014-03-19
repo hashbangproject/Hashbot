@@ -6,6 +6,10 @@
 #include <gait.h>
 #include <hashbot.h>
 
+#ifndef NULL
+#define NULL 0x00000000
+#endif
+
 extern StagSystem g_stag;
 
 void handlePing(uint8_t msgLength, const uint8_t *msg);

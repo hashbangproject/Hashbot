@@ -46,6 +46,7 @@ int cppmain()
     // Set up the pins
     int i;
     for (i = 0; i < 12; i++) pinMode(legPins[i], OUTPUT_SERVO);
+    pinMode(BLUE_LED, OUTPUT);
 
     // We will use WTIMER0 for the interrupts
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_WTIMER0);
@@ -58,6 +59,7 @@ int cppmain()
     ROM_TimerLoadSet(WTIMER0_BASE, TIMER_A, 50);        // 50 ms per cylce
     ROM_TimerIntEnable(WTIMER0_BASE, TIMER_TIMA_TIMEOUT);
     ROM_TimerEnable(WTIMER0_BASE, TIMER_A);
+    ROM_IntPrioritySet(INT_WTIMER0A, 0x20);
 
     // Set general sensor/status interrupt
     ROM_TimerPrescaleSet(WTIMER0_BASE, TIMER_B, 79999); // 1 ms per tick
@@ -65,26 +67,33 @@ int cppmain()
     ROM_TimerLoadSet(WTIMER0_BASE, TIMER_B, 500);       // 500 ms per cycle
     ROM_TimerIntEnable(WTIMER0_BASE, TIMER_TIMB_TIMEOUT);
     ROM_TimerEnable(WTIMER0_BASE, TIMER_B);
+    ROM_IntPrioritySet(INT_WTIMER0A, 0x40);
 
     uint16_t msgLength;
     uint16_t msgFlags;
     MessageType msgType;
 
     // Main message handing loop
+    bool z = true;
     while (1)
     {
+        digitalWrite(BLUE_LED, z);
+        z = !z;
+
         switch (getMessage(&msgType, &msgLength, &msgFlags, g_msgBody))
         {
         case 0: // Success
             handleMessage(msgType, msgLength, g_msgBody);
             break;
         case 1: // Timeout
-            sendError(TIMEOUT_ERROR);
+            //sendError(TIMEOUT_ERROR);
             break;
         case 2: // CRC Error
             sendError(CRC_ERROR);
             break;
         }
+
+        //delay(10000);
     }
 }
 
@@ -117,7 +126,9 @@ void stagInterrupt(void)
         servoWrite(legPins[i*3 + 2], servoPulseOffset[i*3 + 2] + c*angleToPulseFactor);
     }
 
-    putln();
+    //putln();
+
+    // Sensor feeds are sent from here
 
     ROM_TimerIntClear(WTIMER0_BASE, TIMER_TIMA_TIMEOUT);
 }

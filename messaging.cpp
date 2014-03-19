@@ -151,12 +151,12 @@ int getMessage(MessageType *msgType, uint16_t *msgLength, uint16_t *flags, uint8
     n = readHex((uint8_t *)&header, sizeof(header));
     if (n < sizeof(header)) return 1;
 
+    // Avoid buffer overflows
+    if (header.length > MAX_MESSAGE_LENGTH) header.length = MAX_MESSAGE_LENGTH;
+
     *msgType = (MessageType)header.type;
     *msgLength = header.length;
     *flags = header.flags;
-
-    // Avoid buffer overflows
-    if (header.length > MAX_MESSAGE_LENGTH) header.length = MAX_MESSAGE_LENGTH;
 
     // Read in the message
     n = readHex(msg, header.length);
