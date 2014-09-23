@@ -1,9 +1,9 @@
 // Copyright (C) 2013 Project Hashbang
 // Created by Andrew Yang
 
-#include "Classes.h"
+#include "gait.h"
 #include <stdint.h>
-#include <cmath>
+#include <math.h>
 #include <stellarino.h> // for micros()
 
 // helper functions
@@ -325,15 +325,15 @@ void StagSystem::Leg::getAngles(float *pAngle1, float *pAngle2, float *pAngle3)
     const float pi = 3.14159265358f;
 
     // Inverse Kinematics (i.e. black magic)
-    *pAngle1 = atan2(foot_hip.z,sign1*foot_hip.y) - acos(lPelvis/sqrtf(sqr(foot_hip.y)+sqr(foot_hip.z)));
+    *pAngle1 = atan2(foot_hip.y, foot_hip.z);
     vector pelvis_hip
     (
         0.f,
-        sign1*lPelvis*cos(*pAngle1),
-        lPelvis*sin(*pAngle1)
+        lPelvis*sin(*pAngle1),
+        lPelvis*cos(*pAngle1)
     );
-
-    float fpDeltaSqr = sqr(foot_hip.x-pelvis_hip.x) + sqr(foot_hip.y-pelvis_hip.y) + sqr(foot_hip.z-pelvis_hip.z);
-    *pAngle2 = atan2(foot_hip.x, (foot_hip.z-pelvis_hip.z)/cos(*pAngle1)) + sign2*acos((sqr(lUpperLeg) + fpDeltaSqr - sqr(lLowerLeg))/(2.f * lUpperLeg * sqrtf(fpDeltaSqr)));
-    *pAngle3 = sign2*pi - sign2*acos((sqr(lUpperLeg) + sqr(lLowerLeg) - fpDeltaSqr) / (2.f * lUpperLeg * lLowerLeg));
+    float fpZ = sqrt(sqr(foot_hip.y) + sqr(foot_hip.z)) - lPelvis;
+    float fpDeltaSqr = sqr(foot_hip.x) + sqr(fpZ);
+    *pAngle2 = atan2(fpZ, foot_hip.x) + sign2*acos((sqr(lUpperLeg)+fpDeltaSqr-sqr(lLowerLeg))/(2.f*lUpperLeg*sqrt(fpDeltaSqr)));
+    *pAngle3 = sign2*(pi - acos((sqr(lUpperLeg)+sqr(lLowerLeg)-fpDeltaSqr)/(2.f*lUpperLeg*lLowerLeg)));
 }
